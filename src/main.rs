@@ -5,6 +5,8 @@ use std::sync::mpsc;
 use std::time;
 use tui_big_text;
 
+mod ascii_images;
+
 fn main() -> io::Result<()> {
     let terminal = ratatui::init();
     let mut app = App::new();
@@ -65,42 +67,64 @@ impl App {
             .border_set(symbols::border::THICK);
         frame.render_widget(block, area);
 
-        let (work_size, work_pixel, break_size, break_pixel) = match self.pomo.state() {
+        let (work_size, work_pixel, break_size, break_pixel, ascii_image) = match self.pomo.state()
+        {
             pomodoro::PomodoroState::Work => (
                 8,
                 tui_big_text::PixelSize::Full,
                 4,
                 tui_big_text::PixelSize::Quadrant,
+                ascii_images::computer().into_iter().map(text::Line::from),
             ),
             pomodoro::PomodoroState::Break => (
                 4,
                 tui_big_text::PixelSize::Quadrant,
                 8,
                 tui_big_text::PixelSize::Full,
+                ascii_images::sleeping_cat()
+                    .into_iter()
+                    .map(text::Line::from),
             ),
         };
 
-        let vertical = layout::Layout::vertical([
+        let horizontal = layout::Layout::horizontal([
+            layout::Constraint::Percentage(50),
+            layout::Constraint::Percentage(50),
+        ]);
+        let [left, right] = horizontal.areas(area);
+
+        let left_layout = layout::Layout::vertical([
+            layout::Constraint::Fill(1),
+            layout::Constraint::Percentage(50),
+            layout::Constraint::Fill(1),
+        ]);
+        let [_, lcenter, _] = left_layout.areas(left);
+
+        let ascii_image: Vec<text::Line> = ascii_image.collect();
+        let work_ascii = widgets::Paragraph::new(ascii_image).alignment(layout::Alignment::Center);
+        frame.render_widget(work_ascii, lcenter);
+
+        let right_layout = layout::Layout::vertical([
             layout::Constraint::Fill(1),
             layout::Constraint::Length(work_size),
             layout::Constraint::Length(break_size),
             layout::Constraint::Fill(1),
         ]);
-        let [_, top, bottom, _] = vertical.areas(area);
+        let [_, rtop, rbottom, _] = right_layout.areas(right);
 
         let work_timer = tui_big_text::BigText::builder()
             .pixel_size(work_pixel)
             .lines(vec![self.pomo.work_time().blue().into()])
             .centered()
             .build();
-        frame.render_widget(work_timer, top);
+        frame.render_widget(work_timer, rtop);
 
         let break_timer = tui_big_text::BigText::builder()
             .pixel_size(break_pixel)
             .lines(vec![self.pomo.break_time().green().into()])
             .centered()
             .build();
-        frame.render_widget(break_timer, bottom);
+        frame.render_widget(break_timer, rbottom);
     }
 
     fn handle_inputs(&self) {
