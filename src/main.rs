@@ -1,8 +1,9 @@
 use crossterm::event;
-use ratatui::{buffer, layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
+use ratatui::{layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
 use std::io;
 use std::sync::mpsc;
 use std::time;
+use tui_big_text;
 
 fn main() -> io::Result<()> {
     let terminal = ratatui::init();
@@ -49,7 +50,57 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+        let area = frame.area();
+
+        let title = text::Line::from(" Pomodoro ".bold());
+        let instructions = text::Line::from(vec![
+            "Start ".into(),
+            "<S>".blue().bold(),
+            " Quit ".into(),
+            "<Q/Esc> ".blue().bold(),
+        ]);
+        let block = widgets::Block::bordered()
+            .title(title.centered())
+            .title_bottom(instructions.centered())
+            .border_set(symbols::border::THICK);
+        frame.render_widget(block, area);
+
+        let (work_size, work_pixel, break_size, break_pixel) = match self.pomo.state() {
+            pomodoro::PomodoroState::Work => (
+                8,
+                tui_big_text::PixelSize::Full,
+                4,
+                tui_big_text::PixelSize::Quadrant,
+            ),
+            pomodoro::PomodoroState::Break => (
+                4,
+                tui_big_text::PixelSize::Quadrant,
+                8,
+                tui_big_text::PixelSize::Full,
+            ),
+        };
+
+        let vertical = layout::Layout::vertical([
+            layout::Constraint::Fill(1),
+            layout::Constraint::Length(work_size),
+            layout::Constraint::Length(break_size),
+            layout::Constraint::Fill(1),
+        ]);
+        let [_, top, bottom, _] = vertical.areas(area);
+
+        let work_timer = tui_big_text::BigText::builder()
+            .pixel_size(work_pixel)
+            .lines(vec![self.pomo.work_time().blue().into()])
+            .centered()
+            .build();
+        frame.render_widget(work_timer, top);
+
+        let break_timer = tui_big_text::BigText::builder()
+            .pixel_size(break_pixel)
+            .lines(vec![self.pomo.break_time().green().into()])
+            .centered()
+            .build();
+        frame.render_widget(break_timer, bottom);
     }
 
     fn handle_inputs(&self) {
@@ -82,31 +133,5 @@ impl App {
             event::KeyCode::Char('q') => self.exit = true,
             _ => (),
         }
-    }
-}
-
-impl widgets::Widget for &App {
-    fn render(self, area: layout::Rect, buf: &mut buffer::Buffer) {
-        let title = text::Line::from(" Pomodoro ".bold());
-        let instructions = text::Line::from(vec![
-            "Start ".into(),
-            "<S>".blue().bold(),
-            " Quit ".into(),
-            "<Q/Esc> ".blue().bold(),
-        ]);
-        let block = widgets::Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(symbols::border::THICK);
-
-        let counter_text = text::Text::from(vec![
-            text::Line::from(vec![self.pomo.work_time().yellow()]),
-            text::Line::from(vec![self.pomo.break_time().green()]),
-        ]);
-
-        widgets::Paragraph::new(counter_text)
-            .centered()
-            .block(block)
-            .render(area, buf);
     }
 }

@@ -46,7 +46,7 @@ impl fmt::Display for Timer {
     }
 }
 
-enum PomodoroState {
+pub enum PomodoroState {
     Work,
     Break,
 }
@@ -72,6 +72,10 @@ impl Pomodoro {
 
     pub fn work_time(&self) -> String {
         self.work_timer.to_string()
+    }
+
+    pub fn state(&self) -> &PomodoroState {
+        &self.state
     }
 
     pub fn start(&mut self) {
