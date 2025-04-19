@@ -102,7 +102,7 @@ impl Pomodoro {
                 if self.break_timer.remaining() == time::Duration::from_secs(0) {
                     self.break_timer.stop();
                     self.work_timer.start();
-                    self.state = PomodoroState::Break;
+                    self.state = PomodoroState::Work;
                 }
             }
         }
