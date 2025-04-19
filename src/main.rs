@@ -1,32 +1,49 @@
-use crossterm::event::{self, Event};
+use crossterm::event;
 use ratatui::{buffer, layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
 use std::io;
+use std::sync::mpsc;
+use std::time;
 
 fn main() -> io::Result<()> {
     let terminal = ratatui::init();
     let mut app = App::new();
+    app.handle_inputs();
     let result = app.run(terminal);
     ratatui::restore();
     result
 }
 
+enum Event {
+    Key(event::KeyEvent),
+    Tick,
+}
+
 pub struct App {
     timer: pomodoro::Timer,
     exit: bool,
+    tx: mpsc::Sender<Event>,
+    rx: mpsc::Receiver<Event>,
 }
 
 impl App {
     pub fn new() -> Self {
+        let (tx, rx) = mpsc::channel();
         App {
             timer: pomodoro::Timer::new(25),
             exit: false,
+            tx,
+            rx,
         }
     }
 
     fn run(&mut self, mut terminal: DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_event()?;
+            match self.rx.recv() {
+                Ok(Event::Key(key_event)) => self.handle_key_event(key_event),
+                Ok(Event::Tick) => {}
+                _ => (),
+            }
         }
         Ok(())
     }
@@ -35,15 +52,25 @@ impl App {
         frame.render_widget(self, frame.area());
     }
 
-    fn handle_event(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) => match key_event.kind {
-                event::KeyEventKind::Press => self.handle_key_event(key_event),
-                _ => (),
-            },
-            _ => (),
-        };
-        Ok(())
+    fn handle_inputs(&self) {
+        let tx = self.tx.clone();
+        let tick_rate = time::Duration::from_millis(200);
+        std::thread::spawn(move || {
+            let mut last_tick = time::Instant::now();
+            loop {
+                let timeout = tick_rate.saturating_sub(last_tick.elapsed());
+                if event::poll(timeout).unwrap() {
+                    match event::read().unwrap() {
+                        event::Event::Key(key_event) => tx.send(Event::Key(key_event)).unwrap(),
+                        _ => (),
+                    }
+                }
+                if last_tick.elapsed() >= tick_rate {
+                    tx.send(Event::Tick).unwrap();
+                    last_tick = time::Instant::now();
+                }
+            }
+        });
     }
 
     fn handle_key_event(&mut self, key_event: event::KeyEvent) {
