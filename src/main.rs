@@ -32,7 +32,7 @@ impl App {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            pomo: pomodoro::Pomodoro::new(1, 1),
+            pomo: pomodoro::Pomodoro::new((0, 10), (0, 5)),
             exit: false,
             tx,
             rx,

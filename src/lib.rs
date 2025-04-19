@@ -7,8 +7,8 @@ struct Timer {
 }
 
 impl Timer {
-    fn new(minutes: u64) -> Self {
-        let duration = time::Duration::from_secs(minutes * 60);
+    fn new(minutes: u64, seconds: u64) -> Self {
+        let duration = time::Duration::from_secs(minutes * 60 + seconds);
         Timer {
             duration,
             start_time: None,
@@ -58,10 +58,10 @@ pub struct Pomodoro {
 }
 
 impl Pomodoro {
-    pub fn new(work_minutes: u64, break_minutes: u64) -> Self {
+    pub fn new(work_time: (u64, u64), break_time: (u64, u64)) -> Self {
         Pomodoro {
-            work_timer: Timer::new(work_minutes),
-            break_timer: Timer::new(break_minutes),
+            work_timer: Timer::new(work_time.0, work_time.1),
+            break_timer: Timer::new(break_time.0, break_time.1),
             state: PomodoroState::Work,
         }
     }
