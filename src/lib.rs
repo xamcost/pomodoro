@@ -19,14 +19,14 @@ impl Timer {
         self.start_time = Some(time::Instant::now());
     }
 
-    pub fn elapsed(&self) -> time::Duration {
+    fn elapsed(&self) -> time::Duration {
         match self.start_time {
             Some(start_time) => start_time.elapsed(),
             None => time::Duration::from_secs(0),
         }
     }
 
-    pub fn remaining(&self) -> time::Duration {
+    fn remaining(&self) -> time::Duration {
         if self.elapsed() >= self.duration {
             return time::Duration::from_secs(0);
         }
