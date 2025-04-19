@@ -19,7 +19,7 @@ enum Event {
 }
 
 pub struct App {
-    timer: pomodoro::Timer,
+    pomo: pomodoro::Pomodoro,
     exit: bool,
     tx: mpsc::Sender<Event>,
     rx: mpsc::Receiver<Event>,
@@ -29,7 +29,7 @@ impl App {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            timer: pomodoro::Timer::new(25),
+            pomo: pomodoro::Pomodoro::new(1, 1),
             exit: false,
             tx,
             rx,
@@ -41,7 +41,7 @@ impl App {
             terminal.draw(|frame| self.draw(frame))?;
             match self.rx.recv() {
                 Ok(Event::Key(key_event)) => self.handle_key_event(key_event),
-                Ok(Event::Tick) => {}
+                Ok(Event::Tick) => self.pomo.check_and_switch(),
                 _ => (),
             }
         }
@@ -76,7 +76,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: event::KeyEvent) {
         match key_event.code {
             event::KeyCode::Char('s') => {
-                self.timer.start();
+                self.pomo.start();
             }
             event::KeyCode::Esc => self.exit = true,
             event::KeyCode::Char('q') => self.exit = true,
@@ -99,10 +99,10 @@ impl widgets::Widget for &App {
             .title_bottom(instructions.centered())
             .border_set(symbols::border::THICK);
 
-        let counter_text = text::Text::from(vec![text::Line::from(vec![
-            "Value: ".into(),
-            format!("{}", self.timer).yellow(),
-        ])]);
+        let counter_text = text::Text::from(vec![
+            text::Line::from(vec![self.pomo.work_time().yellow()]),
+            text::Line::from(vec![self.pomo.break_time().green()]),
+        ]);
 
         widgets::Paragraph::new(counter_text)
             .centered()
