@@ -95,7 +95,7 @@ impl App {
 
         let left_layout = layout::Layout::vertical([
             layout::Constraint::Fill(1),
-            layout::Constraint::Percentage(50),
+            layout::Constraint::Length(10),
             layout::Constraint::Fill(1),
         ]);
         let [_, lcenter, _] = left_layout.areas(left);
