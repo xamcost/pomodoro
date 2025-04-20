@@ -1,5 +1,5 @@
-use notify_rust::Notification;
 use std::fmt;
+use std::process;
 use std::time;
 
 struct Timer {
@@ -96,13 +96,13 @@ impl Pomodoro {
                 &mut self.work_timer,
                 &mut self.break_timer,
                 PomodoroState::Break,
-                "Time for a break!",
+                "It's time to have a break.",
             ),
             PomodoroState::Break => (
                 &mut self.break_timer,
                 &mut self.work_timer,
                 PomodoroState::Work,
-                "Back to work!",
+                "It's time to research.",
             ),
         };
 
@@ -114,13 +114,24 @@ impl Pomodoro {
         }
     }
 
-    fn show_notification(&self, summary: &str, body: &str) {
-        Notification::new()
-            .summary(summary)
-            .body(body)
-            .timeout(5)
-            .show()
-            .unwrap();
+    fn show_notification(&self, title: &str, message: &str) {
+        if cfg!(target_os = "macos") {
+            match process::Command::new("osascript")
+                .arg("-e")
+                .arg(format!(
+                    "display notification \"{}\" with title \"{}\"",
+                    message, title
+                ))
+                .arg("-e")
+                .arg(format!("say \"{}\" using \"Thomas\"", message))
+                .output()
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("Failed to send notification: {}", e);
+                }
+            }
+        }
     }
 }
 
