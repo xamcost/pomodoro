@@ -91,34 +91,36 @@ impl Pomodoro {
     }
 
     pub fn check_and_switch(&mut self) {
-        match self.state {
-            PomodoroState::Work => {
-                if self.work_timer.remaining() == time::Duration::from_secs(0) {
-                    self.work_timer.stop();
-                    self.break_timer.start();
-                    self.state = PomodoroState::Break;
-                    Notification::new()
-                        .summary("Pomodoro Timer")
-                        .body("Time for a break!")
-                        .timeout(5)
-                        .show()
-                        .unwrap();
-                }
-            }
-            PomodoroState::Break => {
-                if self.break_timer.remaining() == time::Duration::from_secs(0) {
-                    self.break_timer.stop();
-                    self.work_timer.start();
-                    self.state = PomodoroState::Work;
-                    Notification::new()
-                        .summary("Pomodoro Timer")
-                        .body("Back to work!")
-                        .timeout(5)
-                        .show()
-                        .unwrap();
-                }
-            }
+        let (current_timer, next_timer, next_state, message) = match self.state {
+            PomodoroState::Work => (
+                &mut self.work_timer,
+                &mut self.break_timer,
+                PomodoroState::Break,
+                "Time for a break!",
+            ),
+            PomodoroState::Break => (
+                &mut self.break_timer,
+                &mut self.work_timer,
+                PomodoroState::Work,
+                "Back to work!",
+            ),
+        };
+
+        if current_timer.remaining() == time::Duration::from_secs(0) {
+            current_timer.stop();
+            next_timer.start();
+            self.state = next_state;
+            self.show_notification("Pomodoro Timer", message);
         }
+    }
+
+    fn show_notification(&self, summary: &str, body: &str) {
+        Notification::new()
+            .summary(summary)
+            .body(body)
+            .timeout(5)
+            .show()
+            .unwrap();
     }
 }
 

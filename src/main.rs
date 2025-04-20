@@ -10,10 +10,8 @@ mod ascii_images;
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
-    let work_time = args.work;
-    let break_time = args.break_time;
     let terminal = ratatui::init();
-    let mut app = App::new(work_time, break_time);
+    let mut app = App::new(args.work, args.break_time);
     app.handle_inputs();
     let result = app.run(terminal);
     ratatui::restore();
@@ -35,7 +33,7 @@ enum Event {
     Tick,
 }
 
-pub struct App {
+struct App {
     pomo: pomodoro::Pomodoro,
     exit: bool,
     tx: mpsc::Sender<Event>,
@@ -43,7 +41,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(work_min: u64, break_min: u64) -> Self {
+    fn new(work_min: u64, break_min: u64) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
             pomo: pomodoro::Pomodoro::new((work_min, 0), (break_min, 0)),
