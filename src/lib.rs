@@ -110,27 +110,7 @@ impl Pomodoro {
             current_timer.stop();
             next_timer.start();
             self.state = next_state;
-            self.show_notification("Pomodoro Timer", message);
-        }
-    }
-
-    fn show_notification(&self, title: &str, message: &str) {
-        if cfg!(target_os = "macos") {
-            match process::Command::new("osascript")
-                .arg("-e")
-                .arg(format!(
-                    "display notification \"{}\" with title \"{}\"",
-                    message, title
-                ))
-                .arg("-e")
-                .arg(format!("say \"{}\" using \"Thomas\"", message))
-                .output()
-            {
-                Ok(_) => {}
-                Err(e) => {
-                    eprintln!("Failed to send notification: {}", e);
-                }
-            }
+            show_notification("Pomodoro Timer", message);
         }
     }
 }
@@ -140,4 +120,24 @@ fn get_min_sec_from_duration(duration: time::Duration) -> (u64, u64) {
     let minutes = total_seconds / 60;
     let seconds = total_seconds % 60;
     (minutes, seconds)
+}
+
+fn show_notification(title: &str, message: &str) {
+    if cfg!(target_os = "macos") {
+        match process::Command::new("osascript")
+            .arg("-e")
+            .arg(format!(
+                "display notification \"{}\" with title \"{}\"",
+                message, title
+            ))
+            .arg("-e")
+            .arg(format!("say \"{}\" using \"Thomas\"", message))
+            .output()
+        {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Failed to send notification: {}", e);
+            }
+        }
+    }
 }
