@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::event;
 use ratatui::{layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
 use std::io;
@@ -8,12 +9,25 @@ use tui_big_text;
 mod ascii_images;
 
 fn main() -> io::Result<()> {
+    let args = Args::parse();
+    let work_time = args.work;
+    let break_time = args.break_time;
     let terminal = ratatui::init();
-    let mut app = App::new();
+    let mut app = App::new(work_time, break_time);
     app.handle_inputs();
     let result = app.run(terminal);
     ratatui::restore();
     result
+}
+
+#[derive(Parser)]
+#[clap(about = "A simple Pomodoro timer")]
+#[clap(long_about = None)]
+struct Args {
+    #[arg(short, long, default_value = "25")]
+    work: u64,
+    #[arg(short, long, default_value = "5")]
+    break_time: u64,
 }
 
 enum Event {
@@ -29,10 +43,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(work_min: u64, break_min: u64) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            pomo: pomodoro::Pomodoro::new((0, 10), (0, 5)),
+            pomo: pomodoro::Pomodoro::new((work_min, 0), (break_min, 0)),
             exit: false,
             tx,
             rx,
