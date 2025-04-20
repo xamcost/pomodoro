@@ -1,3 +1,4 @@
+use notify_rust::Notification;
 use std::fmt;
 use std::time;
 
@@ -96,6 +97,12 @@ impl Pomodoro {
                     self.work_timer.stop();
                     self.break_timer.start();
                     self.state = PomodoroState::Break;
+                    Notification::new()
+                        .summary("Pomodoro Timer")
+                        .body("Time for a break!")
+                        .timeout(5)
+                        .show()
+                        .unwrap();
                 }
             }
             PomodoroState::Break => {
@@ -103,6 +110,12 @@ impl Pomodoro {
                     self.break_timer.stop();
                     self.work_timer.start();
                     self.state = PomodoroState::Work;
+                    Notification::new()
+                        .summary("Pomodoro Timer")
+                        .body("Back to work!")
+                        .timeout(5)
+                        .show()
+                        .unwrap();
                 }
             }
         }
