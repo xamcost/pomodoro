@@ -64,12 +64,19 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
+        let start_pause = match self.pomo.is_running() {
+            true => "Pause ",
+            false => "Start ",
+        };
+
         let area = frame.area();
 
         let title = text::Line::from(" Pomodoro ".bold());
         let instructions = text::Line::from(vec![
-            "Start ".into(),
+            start_pause.into(),
             "<S>".blue().bold(),
+            " Reset ".into(),
+            "<R>".blue().bold(),
             " Quit ".into(),
             "<Q/Esc> ".blue().bold(),
         ]);
@@ -163,7 +170,10 @@ impl App {
     fn handle_key_event(&mut self, key_event: event::KeyEvent) {
         match key_event.code {
             event::KeyCode::Char('s') => {
-                self.pomo.start();
+                self.pomo.start_or_pause();
+            }
+            event::KeyCode::Char('r') => {
+                self.pomo.reset();
             }
             event::KeyCode::Esc => self.exit = true,
             event::KeyCode::Char('q') => self.exit = true,

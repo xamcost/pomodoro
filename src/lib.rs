@@ -5,6 +5,8 @@ use std::time;
 struct Timer {
     duration: time::Duration,
     start_time: Option<time::Instant>,
+    elapsed: time::Duration,
+    is_running: bool,
 }
 
 impl Timer {
@@ -13,21 +15,31 @@ impl Timer {
         Timer {
             duration,
             start_time: None,
+            elapsed: time::Duration::from_secs(0),
+            is_running: false,
         }
     }
 
-    fn start(&mut self) {
-        self.start_time = Some(time::Instant::now());
+    fn start_or_pause(&mut self) {
+        if self.is_running {
+            self.elapsed = self.elapsed();
+            self.start_time = None;
+        } else {
+            self.start_time = Some(time::Instant::now());
+        }
+        self.is_running = !self.is_running;
     }
 
-    fn stop(&mut self) {
+    fn reset(&mut self) {
         self.start_time = None;
+        self.elapsed = time::Duration::from_secs(0);
+        self.is_running = false;
     }
 
     fn elapsed(&self) -> time::Duration {
         match self.start_time {
-            Some(start_time) => start_time.elapsed(),
-            None => time::Duration::from_secs(0),
+            Some(start_time) => self.elapsed + start_time.elapsed(),
+            None => self.elapsed,
         }
     }
 
@@ -79,15 +91,28 @@ impl Pomodoro {
         &self.state
     }
 
-    pub fn start(&mut self) {
+    pub fn is_running(&self) -> bool {
+        match self.state {
+            PomodoroState::Work => self.work_timer.is_running,
+            PomodoroState::Break => self.break_timer.is_running,
+        }
+    }
+
+    pub fn start_or_pause(&mut self) {
         match self.state {
             PomodoroState::Work => {
-                self.work_timer.start();
+                self.work_timer.start_or_pause();
             }
             PomodoroState::Break => {
-                self.break_timer.start();
+                self.break_timer.start_or_pause();
             }
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.work_timer.reset();
+        self.break_timer.reset();
+        self.state = PomodoroState::Work;
     }
 
     pub fn check_and_switch(&mut self) {
@@ -107,8 +132,8 @@ impl Pomodoro {
         };
 
         if current_timer.remaining() == time::Duration::from_secs(0) {
-            current_timer.stop();
-            next_timer.start();
+            current_timer.reset();
+            next_timer.start_or_pause();
             self.state = next_state;
             show_notification("Pomodoro Timer", message);
         }
