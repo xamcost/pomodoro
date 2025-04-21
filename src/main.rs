@@ -13,6 +13,7 @@ fn main() -> io::Result<()> {
     let terminal = ratatui::init();
     let mut app = App::new(args.work, args.break_time);
     app.handle_inputs();
+    app.pomo.start_or_pause();
     let result = app.run(terminal);
     ratatui::restore();
     result
