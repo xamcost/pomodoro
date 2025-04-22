@@ -166,3 +166,110 @@ fn show_notification(title: &str, message: &str) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_timer_initialization() {
+        // When
+        let timer = Timer::new(2, 125);
+        // Then
+        assert_eq!(timer.duration.as_secs(), 245);
+        assert_eq!(timer.elapsed.as_secs(), 0);
+        assert!(!timer.is_running);
+    }
+
+    #[test]
+    fn test_timer_start_or_pause() {
+        // Given
+        let mut timer = Timer::new(1, 15);
+        // When
+        timer.start_or_pause();
+        // Then
+        assert!(timer.is_running);
+        assert!(timer.start_time.is_some());
+        let elapsed = timer.elapsed();
+        assert!(timer.elapsed() > time::Duration::from_secs(0));
+        assert!(timer.remaining() < timer.duration);
+        // Testing pause
+        // Given
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // When
+        timer.start_or_pause();
+        // Then
+        assert!(!timer.is_running);
+        assert!(timer.elapsed() > elapsed + time::Duration::from_secs(1));
+        assert_eq!(timer.remaining(), timer.duration - timer.elapsed());
+    }
+
+    #[test]
+    fn test_timer_reset() {
+        // Given
+        let mut timer = Timer::new(1, 15);
+        timer.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // When
+        timer.reset();
+        // Then
+        assert_eq!(timer.elapsed(), time::Duration::from_secs(0));
+        assert!(!timer.is_running);
+        assert!(timer.start_time.is_none());
+        assert_eq!(timer.remaining(), timer.duration);
+    }
+
+    #[test]
+    fn test_timer_elapsed() {
+        // Given
+        let mut timer = Timer::new(0, 3);
+        // When
+        timer.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // Then
+        assert!(timer.elapsed().as_secs() > 0);
+        // When
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let elapsed = timer.elapsed();
+        // Then
+        assert!(elapsed.as_secs() >= 3);
+        // When: timer is paused
+        timer.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // Then
+        // elapsed should not increase
+        assert_eq!(timer.elapsed().as_secs(), elapsed.as_secs());
+    }
+
+    #[test]
+    fn test_timer_remaining() {
+        // When
+        let mut timer = Timer::new(0, 3);
+        // Then
+        assert_eq!(timer.remaining().as_secs(), 3);
+        // When
+        timer.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // Then
+        assert!(timer.remaining().as_secs() > 0);
+        // When
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        let remaining = timer.remaining();
+        // Then
+        assert_eq!(remaining.as_secs(), 0);
+    }
+
+    #[test]
+    fn test_timer_display() {
+        let timer = Timer::new(1, 125);
+        assert_eq!(timer.to_string(), "03:05");
+    }
+
+    #[test]
+    fn test_get_min_sec_from_duration() {
+        let duration = time::Duration::from_secs(125);
+        let (minutes, seconds) = get_min_sec_from_duration(duration);
+        assert_eq!(minutes, 2);
+        assert_eq!(seconds, 5);
+    }
+}
