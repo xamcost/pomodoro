@@ -59,6 +59,7 @@ impl fmt::Display for Timer {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum PomodoroState {
     Work,
     Break,
@@ -169,6 +170,9 @@ fn show_notification(title: &str, message: &str) {
 
 #[cfg(test)]
 mod tests {
+    // This module tests the functionalities fo the Pomodoro timer.
+    // Tests for the Timer struct are included, but could be discarded
+    // since only the Pomodoro struct is public.
     use super::*;
 
     #[test]
@@ -261,8 +265,92 @@ mod tests {
 
     #[test]
     fn test_timer_display() {
+        // When
         let timer = Timer::new(1, 125);
+        // Then
         assert_eq!(timer.to_string(), "03:05");
+    }
+
+    #[test]
+    fn test_pomodoro_initialization() {
+        // When
+        let pomodoro = Pomodoro::new((25, 0), (2, 5));
+        // Then
+        assert_eq!(pomodoro.work_time(), "25:00");
+        assert_eq!(pomodoro.break_time(), "02:05");
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
+        assert!(!pomodoro.is_running());
+    }
+
+    #[test]
+    fn test_pomodoro_start_or_pause() {
+        // Given
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2));
+        // When
+        pomodoro.start_or_pause();
+        // Then
+        assert!(pomodoro.is_running());
+        assert_eq!(pomodoro.work_time(), "00:02");
+        assert_eq!(pomodoro.break_time(), "00:02");
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
+        // When paused
+        pomodoro.start_or_pause();
+        // Then
+        assert!(!pomodoro.is_running());
+        assert_eq!(pomodoro.work_time(), "00:02");
+        assert_eq!(pomodoro.break_time(), "00:02");
+    }
+
+    #[test]
+    fn test_pomodoro_reset() {
+        // Given
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2));
+        pomodoro.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        // When
+        pomodoro.reset();
+        // Then
+        assert_eq!(pomodoro.work_time(), "00:03");
+        assert_eq!(pomodoro.break_time(), "00:02");
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
+        assert!(!pomodoro.is_running());
+    }
+
+    #[test]
+    fn test_pomodoro_reset_from_break() {
+        // Given
+        let mut pomodoro = Pomodoro::new((0, 1), (0, 5));
+        pomodoro.start_or_pause();
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        pomodoro.check_and_switch();
+        // When
+        pomodoro.reset();
+        // Then
+        assert_eq!(pomodoro.work_time(), "00:01");
+        assert_eq!(pomodoro.break_time(), "00:05");
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
+        assert!(!pomodoro.is_running());
+    }
+
+    #[test]
+    fn test_pomodoro_check_and_switch() {
+        // Given
+        let mut pomodoro = Pomodoro::new((0, 2), (0, 2));
+        pomodoro.start_or_pause();
+        // When
+        pomodoro.check_and_switch();
+        // Then
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
+        // When expected to switch to break
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        pomodoro.check_and_switch();
+        // Then
+        assert_eq!(*pomodoro.state(), PomodoroState::Break);
+        // When expected to switch to work
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        pomodoro.check_and_switch();
+        // Then
+        assert_eq!(*pomodoro.state(), PomodoroState::Work);
     }
 
     #[test]
