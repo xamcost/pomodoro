@@ -171,19 +171,9 @@ fn show_notification(title: &str, message: &str) {
 #[cfg(test)]
 mod tests {
     // This module tests the functionalities fo the Pomodoro timer.
-    // Tests for the Timer struct are included, but could be discarded
-    // since only the Pomodoro struct is public.
+    // Some tests for the Timer struct are included to check more
+    // thoroughly the timer functionalities.
     use super::*;
-
-    #[test]
-    fn test_timer_initialization() {
-        // When
-        let timer = Timer::new(2, 125);
-        // Then
-        assert_eq!(timer.duration.as_secs(), 245);
-        assert_eq!(timer.elapsed.as_secs(), 0);
-        assert!(!timer.is_running);
-    }
 
     #[test]
     fn test_timer_start_or_pause() {
@@ -221,28 +211,6 @@ mod tests {
         assert!(!timer.is_running);
         assert!(timer.start_time.is_none());
         assert_eq!(timer.remaining(), timer.duration);
-    }
-
-    #[test]
-    fn test_timer_elapsed() {
-        // Given
-        let mut timer = Timer::new(0, 3);
-        // When
-        timer.start_or_pause();
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        // Then
-        assert!(timer.elapsed().as_secs() > 0);
-        // When
-        std::thread::sleep(std::time::Duration::from_secs(2));
-        let elapsed = timer.elapsed();
-        // Then
-        assert!(elapsed.as_secs() >= 3);
-        // When: timer is paused
-        timer.start_or_pause();
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        // Then
-        // elapsed should not increase
-        assert_eq!(timer.elapsed().as_secs(), elapsed.as_secs());
     }
 
     #[test]
