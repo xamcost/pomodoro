@@ -67,45 +67,23 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let start_pause = match self.pomo.is_running() {
-            true => "Pause ",
-            false => "Start ",
-        };
-
         let area = frame.area();
 
-        let title = text::Line::from(" Pomodoro ".bold());
-        let instructions = text::Line::from(vec![
-            start_pause.into(),
-            "<S>".blue().bold(),
-            " Reset ".into(),
-            "<R>".blue().bold(),
-            " Quit ".into(),
-            "<Q/Esc> ".blue().bold(),
-        ]);
-        let block = widgets::Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(symbols::border::THICK);
+        let block = self.get_block_widget();
         frame.render_widget(block, area);
 
-        let (work_size, work_pixel, break_size, break_pixel, ascii_image) = match self.pomo.state()
-        {
+        let (work_size, work_pixel, break_size, break_pixel) = match self.pomo.state() {
             pomodoro::PomodoroState::Work => (
                 8,
                 tui_big_text::PixelSize::Full,
                 4,
                 tui_big_text::PixelSize::Quadrant,
-                ascii_images::computer().into_iter().map(text::Line::from),
             ),
             pomodoro::PomodoroState::Break => (
                 4,
                 tui_big_text::PixelSize::Quadrant,
                 8,
                 tui_big_text::PixelSize::Full,
-                ascii_images::sleeping_cat()
-                    .into_iter()
-                    .map(text::Line::from),
             ),
         };
 
@@ -122,9 +100,8 @@ impl App {
         ]);
         let [_, lcenter, _] = left_layout.areas(left);
 
-        let ascii_image: Vec<text::Line> = ascii_image.collect();
-        let work_ascii = widgets::Paragraph::new(ascii_image).alignment(layout::Alignment::Center);
-        frame.render_widget(work_ascii, lcenter);
+        let ascii_img = self.get_ascii_image_widget();
+        frame.render_widget(ascii_img, lcenter);
 
         let right_layout = layout::Layout::vertical([
             layout::Constraint::Fill(1),
@@ -134,19 +111,60 @@ impl App {
         ]);
         let [_, rtop, rbottom, _] = right_layout.areas(right);
 
+        let (work_timer, break_timer) = self.get_timer_widgets(work_pixel, break_pixel);
+        frame.render_widget(work_timer, rtop);
+        frame.render_widget(break_timer, rbottom);
+    }
+
+    fn get_block_widget(&self) -> widgets::Block {
+        let start_pause = match self.pomo.is_running() {
+            true => "Pause ",
+            false => "Start ",
+        };
+
+        let title = text::Line::from(" Pomodoro ".bold());
+        let instructions = text::Line::from(vec![
+            start_pause.into(),
+            "<S>".blue().bold(),
+            " Reset ".into(),
+            "<R>".blue().bold(),
+            " Quit ".into(),
+            "<Q/Esc> ".blue().bold(),
+        ]);
+        widgets::Block::bordered()
+            .title(title.centered())
+            .title_bottom(instructions.centered())
+            .border_set(symbols::border::THICK)
+    }
+
+    fn get_ascii_image_widget(&self) -> widgets::Paragraph {
+        let ascii_image: Vec<text::Line> = match self.pomo.state() {
+            pomodoro::PomodoroState::Work => ascii_images::computer(),
+            pomodoro::PomodoroState::Break => ascii_images::sleeping_cat(),
+        }
+        .into_iter()
+        .map(text::Line::from)
+        .collect();
+
+        widgets::Paragraph::new(ascii_image).alignment(layout::Alignment::Center)
+    }
+
+    fn get_timer_widgets(
+        &self,
+        work_pixel: tui_big_text::PixelSize,
+        break_pixel: tui_big_text::PixelSize,
+    ) -> (tui_big_text::BigText, tui_big_text::BigText) {
         let work_timer = tui_big_text::BigText::builder()
             .pixel_size(work_pixel)
             .lines(vec![self.pomo.work_time().blue().into()])
             .centered()
             .build();
-        frame.render_widget(work_timer, rtop);
-
         let break_timer = tui_big_text::BigText::builder()
             .pixel_size(break_pixel)
             .lines(vec![self.pomo.break_time().green().into()])
             .centered()
             .build();
-        frame.render_widget(break_timer, rbottom);
+        (work_timer, break_timer)
     }
 
     fn handle_key_event(&mut self, key_event: event::KeyEvent) {
