@@ -16,16 +16,18 @@ pub struct App {
     exit: bool,
     tx: mpsc::Sender<Event>,
     rx: mpsc::Receiver<Event>,
+    hide_image: bool,
 }
 
 impl App {
-    pub fn new(work_min: u64, break_min: u64) -> Self {
+    pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
             pomo: pomodoro::Pomodoro::new((work_min, 0), (break_min, 0)),
             exit: false,
             tx,
             rx,
+            hide_image,
         }
     }
 
@@ -67,11 +69,6 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let area = frame.area();
-
-        let block = self.get_block_widget();
-        frame.render_widget(block, area);
-
         let (work_size, work_pixel, break_size, break_pixel) = match self.pomo.state() {
             pomodoro::PomodoroState::Work => (
                 8,
@@ -87,9 +84,33 @@ impl App {
             ),
         };
 
+        let area = frame.area();
+
+        let block = self.get_block_widget();
+        frame.render_widget(block, area);
+
+        let (lcenter, rtop, rbottom) = self.get_layout(area, work_size, break_size);
+
+        if !self.hide_image {
+            let ascii_img = self.get_ascii_image_widget();
+            frame.render_widget(ascii_img, lcenter);
+        }
+
+        let (work_timer, break_timer) = self.get_timer_widgets(work_pixel, break_pixel);
+        frame.render_widget(work_timer, rtop);
+        frame.render_widget(break_timer, rbottom);
+    }
+
+    fn get_layout(
+        &self,
+        area: layout::Rect,
+        work_size: u16,
+        break_size: u16,
+    ) -> (layout::Rect, layout::Rect, layout::Rect) {
+        let (ascii_width, timer_width) = if !self.hide_image { (50, 50) } else { (0, 100) };
         let horizontal = layout::Layout::horizontal([
-            layout::Constraint::Percentage(50),
-            layout::Constraint::Percentage(50),
+            layout::Constraint::Percentage(ascii_width),
+            layout::Constraint::Percentage(timer_width),
         ]);
         let [left, right] = horizontal.areas(area);
 
@@ -100,9 +121,6 @@ impl App {
         ]);
         let [_, lcenter, _] = left_layout.areas(left);
 
-        let ascii_img = self.get_ascii_image_widget();
-        frame.render_widget(ascii_img, lcenter);
-
         let right_layout = layout::Layout::vertical([
             layout::Constraint::Fill(1),
             layout::Constraint::Length(work_size),
@@ -111,9 +129,7 @@ impl App {
         ]);
         let [_, rtop, rbottom, _] = right_layout.areas(right);
 
-        let (work_timer, break_timer) = self.get_timer_widgets(work_pixel, break_pixel);
-        frame.render_widget(work_timer, rtop);
-        frame.render_widget(break_timer, rbottom);
+        (lcenter, rtop, rbottom)
     }
 
     fn get_block_widget(&self) -> widgets::Block {
