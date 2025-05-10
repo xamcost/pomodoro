@@ -11,7 +11,7 @@ mod ascii_images;
 struct Args {
     #[arg(short, long, default_value = "25")]
     work: u64,
-    #[arg(short, long, default_value = "5")]
+    #[arg(short = 'b', long = "break", default_value = "5")]
     break_time: u64,
     #[arg(short = 'i', long = "hide-image", default_value = "false")]
     hide_image: bool,
