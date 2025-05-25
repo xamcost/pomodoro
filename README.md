@@ -9,20 +9,25 @@ It works nicely in a terminal multiplexer:
 
 Make sure you have Rust installed. You can install it from [rustup.rs](https://rustup.rs/).
 
-Then, clone the repository and run it with:
+Then, get the binary from crates.io:
 
 ```bash
-cargo run
+cargo install pomodoro-tui
 ```
 
-By default, the timer is set to 25 minutes of work and 5 minutes of break. You can change these values using the
-`-w/--work` and `-b/--break` flags. You can also remove the ASCII art next to the timers using the `-i/--hide-image` flag:
+You can now run the app with the following command:
 
 ```bash
-cargo run -- -w 30 -b 10 -i
+pomodoro-tui
 ```
 
-This will set the work timer to 30 minutes and the break timer to 10 minutes, and hide the ASCII art.
+By default, the timer is set to 25 minutes for work sessions and 5 minutes for breaks. You can change these values using the
+`-w/--work` and `-b/--break` flags. You can also remove the ASCII art next to the timers using the `-i/--hide-image` flag.
+For instance, if you want to set the work timer to 30 minutes and the break timer to 10 minutes, and hide the ASCII art, you can run:
+
+```bash
+pomodoro-tui -w 30 -b 10 -i
+```
 
 ## About notifications
 

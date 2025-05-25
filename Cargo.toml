@@ -1,7 +1,11 @@
 [package]
-name = "pomodoro"
+name = "pomodoro-tui"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A simple Pomodoro timer with a terminal user interface."
+homepage = "https://github.com/xamcost/pomodoro"
+repository = "https://github.com/xamcost/pomodoro"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive"] }
