@@ -12,7 +12,7 @@ enum Event {
 }
 
 pub struct App {
-    pomo: pomodoro::Pomodoro,
+    pomo: pomodoro_tui::Pomodoro,
     exit: bool,
     tx: mpsc::Sender<Event>,
     rx: mpsc::Receiver<Event>,
@@ -23,7 +23,7 @@ impl App {
     pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            pomo: pomodoro::Pomodoro::new((work_min, 0), (break_min, 0)),
+            pomo: pomodoro_tui::Pomodoro::new((work_min, 0), (break_min, 0)),
             exit: false,
             tx,
             rx,
@@ -70,13 +70,13 @@ impl App {
 
     fn draw(&self, frame: &mut Frame) {
         let (work_size, work_pixel, break_size, break_pixel) = match self.pomo.state() {
-            pomodoro::PomodoroState::Work => (
+            pomodoro_tui::PomodoroState::Work => (
                 8,
                 tui_big_text::PixelSize::Full,
                 4,
                 tui_big_text::PixelSize::Quadrant,
             ),
-            pomodoro::PomodoroState::Break => (
+            pomodoro_tui::PomodoroState::Break => (
                 4,
                 tui_big_text::PixelSize::Quadrant,
                 8,
@@ -155,8 +155,8 @@ impl App {
 
     fn get_ascii_image_widget(&self) -> widgets::Paragraph {
         let ascii_image: Vec<text::Line> = match self.pomo.state() {
-            pomodoro::PomodoroState::Work => ascii_images::computer(),
-            pomodoro::PomodoroState::Break => ascii_images::sleeping_cat(),
+            pomodoro_tui::PomodoroState::Work => ascii_images::computer(),
+            pomodoro_tui::PomodoroState::Break => ascii_images::sleeping_cat(),
         }
         .into_iter()
         .map(text::Line::from)
