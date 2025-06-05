@@ -2,6 +2,8 @@ use std::fmt;
 use std::process;
 use std::time;
 
+use notify_rust::Notification;
+
 struct Timer {
     duration: time::Duration,
     start_time: Option<time::Instant>,
@@ -165,6 +167,13 @@ fn show_notification(title: &str, message: &str) {
                 eprintln!("Failed to send notification: {}", e);
             }
         }
+    }
+
+    if cfg!(target_os = "linux") {
+        let _ = Notification::new()
+            .summary(title)
+            .body(message)
+            .show();
     }
 }
 
