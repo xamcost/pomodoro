@@ -7,15 +7,13 @@ It works nicely in a terminal multiplexer:
 
 ## How to run
 
-Make sure you have Rust installed. You can install it from [rustup.rs](https://rustup.rs/).
-
-Then, get the binary from crates.io:
+You can either download the binary from the release page, get the binary from crates.io:
 
 ```bash
 cargo install pomodoro-tui
 ```
 
-You can now run the app with the following command:
+You can then run the app with the following command:
 
 ```bash
 pomodoro-tui
@@ -31,9 +29,11 @@ pomodoro-tui -w 30 -b 10 -i
 
 ## About notifications
 
-If you're on MacOS, the app will notify you when the work or break time is over, by triggering both a notification and playing a sound (using the `say` command).
-Don't be too surprised to hear a French accent!
-On any other OS, the app won't notify or play a sound. Maybe I'll add this in the future.
+On Linux and MacOS, the app will send a desktop notification when the work or break time is over.
+
+For MacOS users, the native `say` command is also used to read the notification short text... Don't be too surprised to hear a French accent!
+
+Thanks to @Cythonic1 for adding Linux notification support!
 
 ## Acknowledgements
 
