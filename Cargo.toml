@@ -12,4 +12,5 @@ clap = { version = "4.5.37", features = ["derive"] }
 crossterm = "0.29.0"
 notify-rust = "4.11.7"
 ratatui = "0.29.0"
+rodio = "0.20.1"
 tui-big-text = "0.7.1"

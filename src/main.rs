@@ -15,12 +15,19 @@ struct Args {
     break_time: u64,
     #[arg(short = 'i', long = "hide-image", default_value = "false")]
     hide_image: bool,
+    #[arg(short = 's', long = "sound")]
+    sound: Option<String>,
+    #[arg(short = 'n', long = "no-sound", help="default to false")]
+    no_sound: Option<bool>
 }
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
     let terminal = ratatui::init();
-    let mut app = app::App::new(args.work, args.break_time, args.hide_image);
+
+    // Pass the whole structure make it easier to manage 
+    let mut app = app::App::new(&args);
+
     app.handle_inputs();
     app.start_or_pause();
     let result = app.run(terminal);
