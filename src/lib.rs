@@ -151,8 +151,11 @@ impl Pomodoro {
             next_timer.start_or_pause();
             self.state = next_state;
             show_notification("Pomodoro Timer", message);
+            let sound_clone = self.sound.clone();
             if !self.no_sound {
-                sound_play(&self.sound);
+                thread::spawn(move || {
+                    sound_play(sound_clone);
+                });
             }
         }
 
@@ -164,25 +167,24 @@ impl Pomodoro {
 }
 
 // Maybe adding some widget to render the error some few seconds
-pub fn sound_play(sound: &PathBuf) {
-    let sound = sound.clone(); // move into thread
-    thread::spawn(move || {
-        let (_stream, stream_handler) = match OutputStream::try_default() {
-            Ok(ok) => ok,
-            Err(_e) => return,
-        };
-        if let Ok(open_file) = fs::File::open(&sound) {
-            let file = BufReader::new(open_file);
-            if let Ok(sound_file) = Decoder::new(file) {
-                let _ = stream_handler.play_raw(sound_file.convert_samples());
-                std::thread::sleep(std::time::Duration::from_secs(3)); // Let it play
-            } else {
-                // Decoder::new(file) failed
-            }
+pub fn sound_play(sound: PathBuf) {
+    let (_stream, stream_handler) = match OutputStream::try_default() {
+        Ok(ok) => ok,
+        Err(_e) => return,
+    };
+    if let Ok(open_file) = fs::File::open(&sound) {
+        let file = BufReader::new(open_file);
+        if let Ok(sound_file) = Decoder::new(file) {
+            let _ = stream_handler.play_raw(sound_file.convert_samples());
+            std::thread::sleep(std::time::Duration::from_secs(3)); // Let it play
         } else {
-            // fs::File::open(&sound) failed
-        }    });
+            // Decoder::new(file) failed
+        }
+    } else {
+        // fs::File::open(&sound) failed
+    }    
 }
+
 fn get_min_sec_from_duration(duration: time::Duration) -> (u64, u64) {
     let total_seconds = duration.as_secs();
     let minutes = total_seconds / 60;
@@ -219,10 +221,7 @@ fn show_notification(title: &str, message: &str) {
     }
 }
 
-// For tests units only
-fn default_sound_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("default_sound.mp3")
-}
+
 
 #[cfg(test)]
 mod tests {
@@ -231,6 +230,17 @@ mod tests {
     // thoroughly the timer functionalities.
     use super::*;
 
+    // For tests units only
+    fn default_sound_path() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("default_sound.mp3")
+    }
+
+    #[test]
+    fn test_default_sound_path_exists() {
+        let path = default_sound_path();
+        println!("{:?}", path);
+        assert!(std::path::Path::new(&path).exists(), "Sound file does not exist!");
+    }
     #[test]
     fn test_timer_start_or_pause() {
         // Given
@@ -300,7 +310,7 @@ mod tests {
         // When
         //
         let sound = default_sound_path();
-        let pomodoro = Pomodoro::new((25, 0), (2, 5),sound, false );
+        let pomodoro = Pomodoro::new((25, 0), (2, 5),sound, true );
         // Then
         assert_eq!(pomodoro.work_time(), "25:00");
         assert_eq!(pomodoro.break_time(), "02:05");
@@ -313,7 +323,7 @@ mod tests {
         // Given
 
         let sound = default_sound_path();
-        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, false);
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, true);
         // When
         pomodoro.start_or_pause();
         // Then
@@ -333,7 +343,7 @@ mod tests {
     fn test_pomodoro_reset() {
         // Given
         let sound = default_sound_path();
-        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, false);
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, true);
         pomodoro.start_or_pause();
         std::thread::sleep(std::time::Duration::from_secs(1));
         // When
@@ -350,7 +360,7 @@ mod tests {
         // Given
         
         let sound = default_sound_path();
-        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, false);
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, true);
         std::thread::sleep(std::time::Duration::from_secs(2));
         pomodoro.check_and_switch();
         // When
@@ -367,7 +377,7 @@ mod tests {
         // Given
 
         let sound = default_sound_path();
-        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, false);
+        let mut pomodoro = Pomodoro::new((0, 3), (0, 2) ,sound, true);
         pomodoro.start_or_pause();
         // When
         pomodoro.check_and_switch();
