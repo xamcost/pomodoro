@@ -2,10 +2,9 @@ use crate::ascii_images;
 use crossterm::event;
 use ratatui::{layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
 use std::io;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::mpsc;
 use std::time;
-use crate::Args;
 enum Event {
     Key(event::KeyEvent),
     Tick,
@@ -20,26 +19,27 @@ pub struct App {
     hide_image: bool,
 }
 
-    // pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
+// pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
 impl App {
-    pub fn new(args: &Args) -> Self {
-        let sound = match &args.sound {
-            Some(sound) => PathBuf::from(sound.to_owned()),
-            None => {
-                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("default_sound.mp3")
-            }
-        };
-
-        // The default value for boolean is False
-        let no_sound = args.no_sound.unwrap_or_default();
-
+    pub fn new(
+        work_min: u64,
+        break_min: u64,
+        hide_image: bool,
+        sound: &Path,
+        no_sound: bool,
+    ) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            pomo: pomodoro_tui::Pomodoro::new((args.work, 0), (args.break_time, 0), sound.clone(), no_sound),
+            pomo: pomodoro_tui::Pomodoro::new(
+                (work_min, 0),
+                (break_min, 0),
+                sound.to_path_buf(),
+                no_sound,
+            ),
             exit: false,
             tx,
             rx,
-            hide_image: args.hide_image,
+            hide_image,
         }
     }
 
