@@ -10,7 +10,6 @@ enum Event {
     Tick,
 }
 
-#[allow(dead_code)]
 pub struct App {
     pomo: pomodoro_tui::Pomodoro,
     exit: bool,
@@ -19,7 +18,6 @@ pub struct App {
     hide_image: bool,
 }
 
-// pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
 impl App {
     pub fn new(
         work_min: u64,
@@ -144,7 +142,7 @@ impl App {
         (lcenter, rtop, rbottom)
     }
 
-    fn get_block_widget(&self) -> widgets::Block {
+    fn get_block_widget(&self) -> widgets::Block<'_> {
         let start_pause = match self.pomo.is_running() {
             true => "Pause ",
             false => "Start ",
@@ -165,7 +163,7 @@ impl App {
             .border_set(symbols::border::THICK)
     }
 
-    fn get_ascii_image_widget(&self) -> widgets::Paragraph {
+    fn get_ascii_image_widget(&self) -> widgets::Paragraph<'_> {
         let ascii_image: Vec<text::Line> = match self.pomo.state() {
             pomodoro_tui::PomodoroState::Work => ascii_images::computer(),
             pomodoro_tui::PomodoroState::Break => ascii_images::sleeping_cat(),
@@ -181,7 +179,7 @@ impl App {
         &self,
         work_pixel: tui_big_text::PixelSize,
         break_pixel: tui_big_text::PixelSize,
-    ) -> (tui_big_text::BigText, tui_big_text::BigText) {
+    ) -> (tui_big_text::BigText<'_>, tui_big_text::BigText<'_>) {
         let work_timer = tui_big_text::BigText::builder()
             .pixel_size(work_pixel)
             .lines(vec![self.pomo.work_time().blue().into()])

@@ -1,7 +1,6 @@
 use std::fmt;
 use std::fs;
 use std::io::BufReader;
-use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::thread;
@@ -160,7 +159,6 @@ impl Pomodoro {
     }
 }
 
-// Maybe adding some widget to render the error some few seconds
 pub fn sound_play(sound: &PathBuf) {
     let (_stream, stream_handler) = match OutputStream::try_default() {
         Ok(ok) => ok,
@@ -182,10 +180,7 @@ fn get_min_sec_from_duration(duration: time::Duration) -> (u64, u64) {
     (minutes, seconds)
 }
 
-// Here it take &Path instead of &PathBuf because the compiler say so. Not sure why :D
-// Also here for Mac users i remove the sound when the no_sound flag is on.
-// But not sure so far if we need to keep the sound or use the sound_play as we did for linux
-fn show_notification(title: &str, message: &str, sound: &Path, no_sound: &bool) {
+fn show_notification(title: &str, message: &str, sound: &PathBuf, no_sound: &bool) {
     if cfg!(target_os = "macos") {
         let mut cmd = process::Command::new("osascript");
 
