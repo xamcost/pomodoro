@@ -187,7 +187,7 @@ fn get_min_sec_from_duration(duration: time::Duration) -> (u64, u64) {
 // But not sure so far if we need to keep the sound or use the sound_play as we did for linux
 fn show_notification(title: &str, message: &str, sound: &Path, no_sound: &bool) {
     if cfg!(target_os = "macos") {
-        let mut cmd = process::Command::new("program");
+        let mut cmd = process::Command::new("osascript");
 
         // Default arguments to show the message only..
         cmd.arg("-e").arg(format!(
@@ -196,8 +196,10 @@ fn show_notification(title: &str, message: &str, sound: &Path, no_sound: &bool) 
         ));
 
         if !*no_sound {
-            cmd.arg("-e")
-                .arg(format!("say \"{}\" using \"Thomas\"", message));
+            cmd.arg("-e").arg(format!(
+                "say \"{}\" using \"Thomas (French (France))\"",
+                message
+            ));
         }
 
         match cmd.output() {
@@ -307,7 +309,6 @@ mod tests {
     #[test]
     fn test_pomodoro_initialization() {
         // When
-        //
         let sound = default_sound_path();
         let pomodoro = Pomodoro::new((25, 0), (2, 5), sound, true);
         // Then
@@ -320,22 +321,21 @@ mod tests {
     #[test]
     fn test_pomodoro_start_or_pause() {
         // Given
-
         let sound = default_sound_path();
         let mut pomodoro = Pomodoro::new((0, 1), (0, 5), sound, true);
         // When
-        // pomodoro.start_or_pause();
+        pomodoro.start_or_pause();
         // Then
         assert!(pomodoro.is_running());
-        assert_eq!(pomodoro.work_time(), "00:02");
-        assert_eq!(pomodoro.break_time(), "00:02");
+        assert_eq!(pomodoro.work_time(), "00:00");
+        assert_eq!(pomodoro.break_time(), "00:05");
         assert_eq!(*pomodoro.state(), PomodoroState::Work);
         // When paused
         pomodoro.start_or_pause();
         // Then
         assert!(!pomodoro.is_running());
-        assert_eq!(pomodoro.work_time(), "00:02");
-        assert_eq!(pomodoro.break_time(), "00:02");
+        assert_eq!(pomodoro.work_time(), "00:00");
+        assert_eq!(pomodoro.break_time(), "00:05");
     }
 
     #[test]
@@ -365,8 +365,8 @@ mod tests {
         // When
         pomodoro.reset();
         // Then
-        assert_eq!(pomodoro.work_time(), "00:01");
-        assert_eq!(pomodoro.break_time(), "00:05");
+        assert_eq!(pomodoro.work_time(), "00:03");
+        assert_eq!(pomodoro.break_time(), "00:02");
         assert_eq!(*pomodoro.state(), PomodoroState::Work);
         assert!(!pomodoro.is_running());
     }
