@@ -2,15 +2,15 @@ use crate::ascii_images;
 use crossterm::event;
 use ratatui::{layout, style::Stylize, symbols, text, widgets, DefaultTerminal, Frame};
 use std::io;
+use std::path::Path;
 use std::sync::mpsc;
 use std::time;
-use tui_big_text;
-
 enum Event {
     Key(event::KeyEvent),
     Tick,
 }
 
+#[allow(dead_code)]
 pub struct App {
     pomo: pomodoro_tui::Pomodoro,
     exit: bool,
@@ -19,11 +19,23 @@ pub struct App {
     hide_image: bool,
 }
 
+// pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
 impl App {
-    pub fn new(work_min: u64, break_min: u64, hide_image: bool) -> Self {
+    pub fn new(
+        work_min: u64,
+        break_min: u64,
+        hide_image: bool,
+        sound: &Path,
+        no_sound: bool,
+    ) -> Self {
         let (tx, rx) = mpsc::channel();
         App {
-            pomo: pomodoro_tui::Pomodoro::new((work_min, 0), (break_min, 0)),
+            pomo: pomodoro_tui::Pomodoro::new(
+                (work_min, 0),
+                (break_min, 0),
+                sound.to_path_buf(),
+                no_sound,
+            ),
             exit: false,
             tx,
             rx,
